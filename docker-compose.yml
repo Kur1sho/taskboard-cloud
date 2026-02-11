@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  auth-service:
+    build: ./auth-service
+    env_file:
+      - .env
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: "postgresql+psycopg://taskboard:taskboard@db:5432/taskboard"
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+
+  tasks-service:
+    build: ./tasks-service
+    env_file:
+      - .env
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: "postgresql+psycopg://taskboard:taskboard@db:5432/taskboard"
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
+
+  web:
+    build: ./web
+    environment:
+      VITE_AUTH_URL: "http://localhost:8001"
+      VITE_TASKS_URL: "http://localhost:8002"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - auth-service
+      - tasks-service
+
+volumes:
+  db_data:
