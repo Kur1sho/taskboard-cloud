@@ -59,10 +59,31 @@ jobs:
           python -m compileall .
           if [ -d "tests" ]; then pytest -q; else echo "No tests folder for tasks-service (ok for now)"; fi
 
+  web-checks:
+    name: Web frontend - checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build frontend
+        run: npm run build
+
   docker-build:
     name: Docker build (auth + tasks)
     runs-on: ubuntu-latest
-    needs: [auth-tests, tasks-tests]
+    needs: [auth-tests, tasks-tests, web-checks]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
