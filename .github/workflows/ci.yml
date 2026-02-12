@@ -10,6 +10,9 @@ jobs:
   auth-tests:
     name: Auth service - checks
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: auth-service
     services:
       postgres:
         image: postgres:16
@@ -24,9 +27,6 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
-    defaults:
-      run:
-        working-directory: auth-service
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,13 +42,30 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
+      - name: Wait for Postgres
+        run: |
+          python - <<'PY'
+          import time, psycopg
+          dsn = "postgresql://taskboard:taskboard@localhost:5432/taskboard_test"
+          for i in range(30):
+              try:
+                  with psycopg.connect(dsn) as conn:
+                      print("Postgres up")
+                      break
+              except Exception as e:
+                  time.sleep(1)
+          else:
+              raise SystemExit("Postgres never became ready")
+          PY
+  
       - name: Run checks/tests
         env:
           JWT_SECRET: ci-test-secret
           DATABASE_URL: "postgresql+psycopg://taskboard:taskboard@localhost:5432/taskboard_test"
         run: |
           python -m compileall .
-          if [ -d "tests" ]; then python -m pytest -q; else echo "No tests folder for auth-service"; fi
+          python -c "import main; main.Base.metadata.create_all(bind=main.engine)"
+          pytest -q
 
   tasks-tests:
     name: Tasks service - checks
@@ -56,6 +73,20 @@ jobs:
     defaults:
       run:
         working-directory: tasks-service
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: taskboard
+          POSTGRES_PASSWORD: taskboard
+          POSTGRES_DB: taskboard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U taskboard -d taskboard_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,10 +102,27 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
+      - name: Wait for Postgres
+        run: |
+          python - <<'PY'
+          import time, psycopg
+          dsn = "postgresql://taskboard:taskboard@localhost:5432/taskboard_test"
+          for i in range(30):
+              try:
+                  with psycopg.connect(dsn) as conn:
+                      print("Postgres up")
+                      break
+              except Exception:
+                  time.sleep(1)
+          else:
+              raise SystemExit("Postgres never became ready")
+          PY
+
       - name: Run checks/tests
         run: |
           python -m compileall .
-          if [ -d "tests" ]; then python -m pytest -q; else echo "No tests folder for tasks-service"; fi
+          python -c "import main; main.Base.metadata.create_all(bind=main.engine)"
+          pytest -q
 
   web-checks:
     name: Web frontend - checks
