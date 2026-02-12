@@ -73,6 +73,9 @@ jobs:
     defaults:
       run:
         working-directory: tasks-service
+    env:
+      JWT_SECRET: ci-test-secret
+      DATABASE_URL: "postgresql+psycopg://taskboard:taskboard@localhost:5432/taskboard_test"
     services:
       postgres:
         image: postgres:16
