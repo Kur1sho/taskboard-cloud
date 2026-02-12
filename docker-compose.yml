@@ -25,12 +25,13 @@ services:
       - db
 
   tasks-service:
-    build: ./tasks-service
+    build: ./tasks-service-go
     env_file:
       - .env
     environment:
       JWT_SECRET: ${JWT_SECRET}
-      DATABASE_URL: "postgresql+psycopg://taskboard:taskboard@db:5432/taskboard"
+      DATABASE_URL: "postgres://taskboard:taskboard@db:5432/taskboard?sslmode=disable"
+      CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173"
     ports:
       - "8002:8000"
     depends_on:
