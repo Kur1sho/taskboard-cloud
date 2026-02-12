@@ -10,6 +10,20 @@ jobs:
   auth-tests:
     name: Auth service - checks
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: taskboard
+          POSTGRES_PASSWORD: taskboard
+          POSTGRES_DB: taskboard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U taskboard -d taskboard_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     defaults:
       run:
         working-directory: auth-service
@@ -29,6 +43,9 @@ jobs:
           pip install pytest
 
       - name: Run checks/tests
+        env:
+          JWT_SECRET: ci-test-secret
+          DATABASE_URL: "postgresql+psycopg://taskboard:taskboard@localhost:5432/taskboard_test"
         run: |
           python -m compileall .
           if [ -d "tests" ]; then pytest -q; else echo "No tests folder for auth-service (ok for now)"; fi

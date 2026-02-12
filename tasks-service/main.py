@@ -113,7 +113,10 @@ def update_task(
         raise HTTPException(status_code=404, detail="Task not found")
 
     if patch.title is not None:
-        t.title = patch.title
+        new_title = patch.title.strip()
+        if not new_title:
+            raise HTTPException(status_code=400, detail="Title cannot be empty")
+        t.title = new_title
     if patch.done is not None:
         t.done = patch.done
 
