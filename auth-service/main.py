@@ -2,6 +2,10 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, select
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Query
+from pydantic import EmailStr
+
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
@@ -15,6 +19,20 @@ JWT_EXPIRE_MINUTES = 60
 pwd = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 app = FastAPI(title="Auth Service")
+
+origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173"
+).split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
@@ -57,7 +75,7 @@ def health():
     return {"status": "ok"}
 
 @app.post("/auth/register")
-def register(email: str, password: str, db: Session = Depends(get_db)):
+def register(email: EmailStr, password: str = Query(..., min_length=6), db: Session = Depends(get_db),):
     existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
