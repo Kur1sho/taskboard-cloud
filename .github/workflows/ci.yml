@@ -48,7 +48,7 @@ jobs:
           DATABASE_URL: "postgresql+psycopg://taskboard:taskboard@localhost:5432/taskboard_test"
         run: |
           python -m compileall .
-          if [ -d "tests" ]; then pytest -q; else echo "No tests folder for auth-service (ok for now)"; fi
+          if [ -d "tests" ]; then python -m pytest -q; else echo "No tests folder for auth-service"; fi
 
   tasks-tests:
     name: Tasks service - checks
@@ -74,7 +74,7 @@ jobs:
       - name: Run checks/tests
         run: |
           python -m compileall .
-          if [ -d "tests" ]; then pytest -q; else echo "No tests folder for tasks-service (ok for now)"; fi
+          if [ -d "tests" ]; then python -m pytest -q; else echo "No tests folder for tasks-service"; fi
 
   web-checks:
     name: Web frontend - checks
