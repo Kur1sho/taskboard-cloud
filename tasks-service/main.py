@@ -6,6 +6,8 @@ from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, select
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
 
 
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
@@ -39,6 +41,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 class Base(DeclarativeBase):
     pass
 
+
 class Task(Base):
     __tablename__ = "tasks"
     id = Column(Integer, primary_key=True)
@@ -46,6 +49,10 @@ class Task(Base):
     title = Column(String(200), nullable=False)
     done = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    done: Optional[bool] = None
 
 def get_db():
     db = SessionLocal()
@@ -90,3 +97,45 @@ def create_task(title: str, user_email: str = Depends(get_current_user_email), d
     db.commit()
     db.refresh(t)
     return {"id": t.id, "title": t.title, "done": t.done}
+
+@app.put("/tasks/{task_id}")
+def update_task(
+    task_id: int,
+    patch: TaskUpdate,
+    user_email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
+):
+    t = db.execute(
+        select(Task).where(Task.id == task_id, Task.owner_email == user_email)
+    ).scalar_one_or_none()
+
+    if not t:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if patch.title is not None:
+        t.title = patch.title
+    if patch.done is not None:
+        t.done = patch.done
+
+    db.commit()
+    db.refresh(t)
+    return {"id": t.id, "title": t.title, "done": t.done}
+
+
+@app.delete("/tasks/{task_id}")
+def delete_task(
+    task_id: int,
+    user_email: str = Depends(get_current_user_email),
+    db: Session = Depends(get_db),
+):
+    t = db.execute(
+        select(Task).where(Task.id == task_id, Task.owner_email == user_email)
+    ).scalar_one_or_none()
+
+    if not t:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    db.delete(t)
+    db.commit()
+    return {"ok": True}
+
