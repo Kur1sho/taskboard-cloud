@@ -14,10 +14,6 @@ export default function App() {
   const AUTH_URL = import.meta.env.VITE_AUTH_URL ?? "http://localhost:8001";
   const TASKS_URL = import.meta.env.VITE_TASKS_URL ?? "http://localhost:8002";
 
-  const authHeaders = token
-    ? { Authorization: `Bearer ${token}` }
-    : undefined;
-
   const fetchTasks = async (tkn = token) => {
     setError(null);
     setMessage("");
