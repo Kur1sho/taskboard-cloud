@@ -84,99 +84,101 @@ func main() {
 	})
 
 	r.Route("/tasks", func(rt chi.Router) {
-		rt.Use(authMiddleware(jwtSecret))
-
 		rt.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 			writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		})
 
-		listHandler := func(w http.ResponseWriter, r *http.Request) {
-			email := mustUserEmail(r.Context())
-			tasks, err := listTasks(r.Context(), db, email)
-			if err != nil {
-				writeErr(w, http.StatusInternalServerError, "Failed to load tasks")
-				return
-			}
-			writeJSON(w, http.StatusOK, tasks)
-		}
+		rt.Route("/", func(pr chi.Router) {
+			pr.Use(authMiddleware(jwtSecret))
 
-		createHandler := func(w http.ResponseWriter, r *http.Request) {
-			email := mustUserEmail(r.Context())
-			title := strings.TrimSpace(r.URL.Query().Get("title"))
-			if title == "" {
-				writeErr(w, http.StatusBadRequest, "Task title cannot be empty")
-				return
-			}
-			created, err := createTask(r.Context(), db, email, title)
-			if err != nil {
-				log.Printf("createTask failed: %v (email=%q title=%q)", err, email, title)
-				writeErr(w, http.StatusInternalServerError, "Create task failed")
-				return
-			}
-			writeJSON(w, http.StatusOK, created)
-		}
-
-		rt.Get("/", listHandler)
-		rt.Post("/", createHandler)
-
-		rt.Route("/{taskID}", func(rid chi.Router) {
-			updateHandler := func(w http.ResponseWriter, r *http.Request) {
+			listHandler := func(w http.ResponseWriter, r *http.Request) {
 				email := mustUserEmail(r.Context())
-				id, err := strconv.Atoi(chi.URLParam(r, "taskID"))
+				tasks, err := listTasks(r.Context(), db, email)
 				if err != nil {
-					writeErr(w, http.StatusBadRequest, "Invalid task id")
+					writeErr(w, http.StatusInternalServerError, "Failed to load tasks")
 					return
 				}
+				writeJSON(w, http.StatusOK, tasks)
+			}
 
-				var patch TaskUpdate
-				if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
-					writeErr(w, http.StatusBadRequest, "Invalid JSON")
+			createHandler := func(w http.ResponseWriter, r *http.Request) {
+				email := mustUserEmail(r.Context())
+				title := strings.TrimSpace(r.URL.Query().Get("title"))
+				if title == "" {
+					writeErr(w, http.StatusBadRequest, "Task title cannot be empty")
 					return
 				}
+				created, err := createTask(r.Context(), db, email, title)
+				if err != nil {
+					log.Printf("createTask failed: %v (email=%q title=%q)", err, email, title)
+					writeErr(w, http.StatusInternalServerError, "Create task failed")
+					return
+				}
+				writeJSON(w, http.StatusOK, created)
+			}
 
-				if patch.Title != nil {
-					t := strings.TrimSpace(*patch.Title)
-					if t == "" {
-						writeErr(w, http.StatusBadRequest, "Title cannot be empty")
+			pr.Get("/", listHandler)
+			pr.Post("/", createHandler)
+
+			pr.Route("/{taskID}", func(rid chi.Router) {
+				updateHandler := func(w http.ResponseWriter, r *http.Request) {
+					email := mustUserEmail(r.Context())
+					id, err := strconv.Atoi(chi.URLParam(r, "taskID"))
+					if err != nil {
+						writeErr(w, http.StatusBadRequest, "Invalid task id")
 						return
 					}
-					patch.Title = &t
+
+					var patch TaskUpdate
+					if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
+						writeErr(w, http.StatusBadRequest, "Invalid JSON")
+						return
+					}
+
+					if patch.Title != nil {
+						t := strings.TrimSpace(*patch.Title)
+						if t == "" {
+							writeErr(w, http.StatusBadRequest, "Title cannot be empty")
+							return
+						}
+						patch.Title = &t
+					}
+
+					updated, err := updateTask(r.Context(), db, email, id, patch)
+					if errors.Is(err, sql.ErrNoRows) {
+						writeErr(w, http.StatusNotFound, "Task not found")
+						return
+					}
+					if err != nil {
+						writeErr(w, http.StatusInternalServerError, "Update task failed")
+						return
+					}
+					writeJSON(w, http.StatusOK, updated)
 				}
 
-				updated, err := updateTask(r.Context(), db, email, id, patch)
-				if errors.Is(err, sql.ErrNoRows) {
-					writeErr(w, http.StatusNotFound, "Task not found")
-					return
-				}
-				if err != nil {
-					writeErr(w, http.StatusInternalServerError, "Update task failed")
-					return
-				}
-				writeJSON(w, http.StatusOK, updated)
-			}
+				deleteHandler := func(w http.ResponseWriter, r *http.Request) {
+					email := mustUserEmail(r.Context())
+					id, err := strconv.Atoi(chi.URLParam(r, "taskID"))
+					if err != nil {
+						writeErr(w, http.StatusBadRequest, "Invalid task id")
+						return
+					}
 
-			deleteHandler := func(w http.ResponseWriter, r *http.Request) {
-				email := mustUserEmail(r.Context())
-				id, err := strconv.Atoi(chi.URLParam(r, "taskID"))
-				if err != nil {
-					writeErr(w, http.StatusBadRequest, "Invalid task id")
-					return
+					err = deleteTask(r.Context(), db, email, id)
+					if errors.Is(err, sql.ErrNoRows) {
+						writeErr(w, http.StatusNotFound, "Task not found")
+						return
+					}
+					if err != nil {
+						writeErr(w, http.StatusInternalServerError, "Delete task failed")
+						return
+					}
+					writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 				}
 
-				err = deleteTask(r.Context(), db, email, id)
-				if errors.Is(err, sql.ErrNoRows) {
-					writeErr(w, http.StatusNotFound, "Task not found")
-					return
-				}
-				if err != nil {
-					writeErr(w, http.StatusInternalServerError, "Delete task failed")
-					return
-				}
-				writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
-			}
-
-			rid.Put("/", updateHandler)
-			rid.Delete("/", deleteHandler)
+				rid.Put("/", updateHandler)
+				rid.Delete("/", deleteHandler)
+			})
 		})
 	})
 
