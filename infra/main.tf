@@ -239,7 +239,7 @@ locals {
   # We’ll strip prefixes later in the app if needed, but simplest is:
   # Keep endpoints as-is and have frontend call full URL with /tasks?title=...
   db_url_auth  = "postgresql+psycopg://${var.db_user}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
-  db_url_tasks = "postgres://${var.db_user}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}?sslmode=disable"
+  db_url_tasks = "postgres://${var.db_user}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}?sslmode=require"
 }
 
 resource "aws_ecs_task_definition" "auth" {
