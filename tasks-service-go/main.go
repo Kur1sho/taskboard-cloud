@@ -57,7 +57,7 @@ func main() {
 	db.SetMaxIdleConns(10)
 	db.SetConnMaxLifetime(30 * time.Minute)
 
-	if err := waitForDB(db, 30*time.Second); err != nil {
+	if err := waitForDB(db, 3*time.Minute); err != nil {
 		log.Fatalf("db not ready: %v", err)
 	}
 
@@ -87,6 +87,7 @@ func main() {
 		rt.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 			writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		})
+
 		rt.Use(authMiddleware(jwtSecret))
 
 		listHandler := func(w http.ResponseWriter, r *http.Request) {
