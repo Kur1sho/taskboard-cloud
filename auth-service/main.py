@@ -74,6 +74,10 @@ def create_access_token(subject: str) -> str:
 def health():
     return {"status": "ok"}
 
+@app.get("/auth/health")
+def auth_health():
+    return {"status": "ok"}
+
 @app.post("/auth/register")
 def register(email: EmailStr, password: str = Query(..., min_length=6), db: Session = Depends(get_db),):
     existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()

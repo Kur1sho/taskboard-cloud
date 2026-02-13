@@ -84,6 +84,9 @@ func main() {
 	})
 
 	r.Route("/tasks", func(rt chi.Router) {
+		rt.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
+			writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		})
 		rt.Use(authMiddleware(jwtSecret))
 
 		listHandler := func(w http.ResponseWriter, r *http.Request) {
