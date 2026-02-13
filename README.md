@@ -125,3 +125,5 @@ docker compose up -d --build
 Web: http://localhost:5173
 Auth health: http://localhost:8001/health
 Tasks health: http://localhost:8002/health
+
+
