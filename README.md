@@ -112,3 +112,16 @@ Multi-language backend architecture
 Containerization
 CI/CD pipelines
 Infrastructure as Code (Terraform)
+
+
+## Local run
+### 1) Create env file:
+bash
+cp .env.example .env
+### 2) Build + run:
+docker compose up -d --build
+
+### 3) Open:
+Web: http://localhost:5173
+Auth health: http://localhost:8001/health
+Tasks health: http://localhost:8002/health
