@@ -94,7 +94,7 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# --- RDS (cheap + simple) ---
+# --- RDS ---
 resource "aws_db_subnet_group" "default" {
   name       = "${var.project}-dbsubnets"
   subnet_ids = data.aws_subnets.default.ids
@@ -118,6 +118,16 @@ resource "aws_db_instance" "postgres" {
 # --- ECS Cluster ---
 resource "aws_ecs_cluster" "this" {
   name = "${var.project}-cluster"
+}
+
+resource "aws_cloudwatch_log_group" "auth" {
+  name              = "/ecs/${var.project}-auth"
+  retention_in_days = 7
+}
+
+resource "aws_cloudwatch_log_group" "tasks" {
+  name              = "/ecs/${var.project}-tasks"
+  retention_in_days = 7
 }
 
 # --- ALB ---
@@ -250,6 +260,15 @@ resource "aws_ecs_task_definition" "auth" {
         { name = "JWT_SECRET",   value = var.jwt_secret },
         { name = "DATABASE_URL", value = local.db_url_auth }
       ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.auth.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
   ])
 }
@@ -273,6 +292,15 @@ resource "aws_ecs_task_definition" "tasks" {
         { name = "DATABASE_URL", value = local.db_url_tasks },
         { name = "CORS_ORIGINS", value = "*" }
       ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.tasks.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
   ])
 }
@@ -285,8 +313,8 @@ resource "aws_ecs_service" "auth" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = data.aws_subnets.default.ids
-    security_groups = [aws_security_group.ecs.id]
+    subnets          = data.aws_subnets.default.ids
+    security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
   }
 
@@ -307,8 +335,8 @@ resource "aws_ecs_service" "tasks" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = data.aws_subnets.default.ids
-    security_groups = [aws_security_group.ecs.id]
+    subnets          = data.aws_subnets.default.ids
+    security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
   }
 
