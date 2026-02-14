@@ -190,7 +190,7 @@ resource "aws_lb_listener_rule" "auth" {
 
   condition {
     path_pattern {
-      values = ["/auth/*"]
+      values = ["/auth", "/auth/*"]
     }
   }
 }
@@ -206,7 +206,7 @@ resource "aws_lb_listener_rule" "tasks" {
 
   condition {
     path_pattern {
-      values = ["/tasks/*"]
+      values = ["/tasks", "/tasks/*"]
     }
   }
 }
@@ -290,7 +290,7 @@ resource "aws_ecs_task_definition" "tasks" {
       environment = [
         { name = "JWT_SECRET",   value = var.jwt_secret },
         { name = "DATABASE_URL", value = local.db_url_tasks },
-        { name = "CORS_ORIGINS", value = "http://localhost:5173,http://127.0.0.1:5173" }
+        { name = "CORS_ORIGINS", value = "http://localhost:5173,,http://127.0.0.1:5173" }
       ]
 
       logConfiguration = {
