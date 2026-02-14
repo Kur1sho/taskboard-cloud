@@ -9,21 +9,21 @@ A cloud-native task management system built with a microservice architecture and
 - Real cloud deployment on AWS (ECS, ALB, RDS)
 
 ## Architecture
-     User (Browser)
-           │
-           ▼
-React Frontend (local or static host)
-            │
-            ▼
-AWS Application Load Balancer (ALB)
-     │                  │
-     ▼                  ▼
-Auth Service         Tasks Service
-(Python FastAPI)     (Go + Chi)
-     │                  │
-     └───────┬──────────┘
-             ▼
-      PostgreSQL (AWS RDS)
+          User (Browser)
+                │
+                ▼
+     React Frontend (local or static host)
+                 │
+                 ▼
+     AWS Application Load Balancer (ALB)
+          │                  │
+          ▼                  ▼
+     Auth Service         Tasks Service
+     (Python FastAPI)     (Go + Chi)
+          │                  │
+          └───────┬──────────┘
+                  ▼
+           PostgreSQL (AWS RDS)
 
 ## Services
 ### auth-service
