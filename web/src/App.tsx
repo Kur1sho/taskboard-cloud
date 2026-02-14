@@ -20,7 +20,7 @@ export default function App() {
     if (!tkn) return;
 
     try {
-      const res = await fetch(`${TASKS_URL}/tasks`, {
+      const res = await fetch(`${TASKS_URL}/tasks/`, {
         headers: { Authorization: `Bearer ${tkn}` },
       });
       const data = await res.json().catch(() => ({}));
@@ -110,7 +110,7 @@ export default function App() {
 
     try {
       const res = await fetch(
-        `${TASKS_URL}/tasks?title=${encodeURIComponent(title)}`,
+        `${TASKS_URL}/tasks/?title=${encodeURIComponent(title)}`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
