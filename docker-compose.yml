@@ -40,8 +40,8 @@ services:
   web:
     build: ./web
     environment:
-      VITE_AUTH_URL: "http://localhost:8001"
-      VITE_TASKS_URL: "http://localhost:8002"
+      VITE_AUTH_URL: "http://taskboard-cloud-alb-123565808.eu-west-1.elb.amazonaws.com"
+      VITE_TASKS_URL: "http://taskboard-cloud-alb-123565808.eu-west-1.elb.amazonaws.com"
     ports:
       - "5173:5173"
     depends_on:

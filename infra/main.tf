@@ -290,7 +290,7 @@ resource "aws_ecs_task_definition" "tasks" {
       environment = [
         { name = "JWT_SECRET",   value = var.jwt_secret },
         { name = "DATABASE_URL", value = local.db_url_tasks },
-        { name = "CORS_ORIGINS", value = "*" }
+        { name = "CORS_ORIGINS", value = "http://localhost:5173,http://127.0.0.1:5173" }
       ]
 
       logConfiguration = {
