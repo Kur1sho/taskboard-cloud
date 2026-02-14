@@ -103,17 +103,17 @@ A cloud-native task management system built with a microservice architecture and
 
 ### 1. Create environment file
 Create a .env file in the project root:
-JWT_SECRET=dev-secret-change-me
-POSTGRES_USER=taskboard
-POSTGRES_PASSWORD=taskboard
-POSTGRES_DB=taskboard
+- JWT_SECRET=dev-secret-change-me
+- POSTGRES_USER=taskboard
+- POSTGRES_PASSWORD=taskboard
+- POSTGRES_DB=taskboard
 
-Or copy:
-cp .env.example .env
+**Or copy:**
+- cp .env.example .env
 
 ### 2. Start the stack
 From the project root:
-docker compose up --build
+- docker compose up --build
 
 ### 3. Open the app
 Frontend:
